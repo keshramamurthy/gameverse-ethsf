@@ -11,15 +11,17 @@ export async function handler(context: HandlerContext) {
     const args = content.content.slice(1).split(/ +/);
     args.shift();
 
+    console.log(sender.address.toLowerCase());
+
     if (!args[0]) {
-        if (!userData.has(sender.address)) {
-            userData.set(sender.address, {
+        if (!userData.has(sender.address.toLowerCase())) {
+            userData.set(sender.address.toLowerCase(), {
                 balance: 0,
-                address: sender.address
+                address: sender.address.toLowerCase()
             });
         }
     
-        const data = userData.get(sender.address);
+        const data = userData.get(sender.address.toLowerCase());
     
         return context.send(`You have ${data?.balance} ❖.`);
     } else {

@@ -37,9 +37,9 @@ async function handleTextMessage(context: HandlerContext) {
   const {
     content: { content: text },
   } = context.message;
-  if (text.includes("/help")) {
-    await helpHandler(context);
-  } else {
+  // if (text.includes("/help")) {
+  //   await helpHandler(context);
+  // } else {
     const args = text.slice(1).split(/ +/);
     const commandName: string = args.shift().toLowerCase();
 
@@ -79,7 +79,7 @@ async function handleTextMessage(context: HandlerContext) {
     } catch (e) {
       console.error(e);
     }
-  }
+  // }
 }
 
 async function helpHandler(context: HandlerContext) {

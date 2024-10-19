@@ -51,13 +51,13 @@ export async function handler(context: HandlerContext) {
   const receiverAddresses = receivers.map((receiver) => receiver.address);
   // Process sending tokens to each receiver
   context.sendTo(
-    `You received ${amount} tokens from ${sender.address}.`,
+    `You received ${amount} tokens from ${sender.address.toLowerCase()}.`,
     receiverAddresses,
   );
 
   // Notify sender of the transaction details
   context.sendTo(
     `You sent ${amount * receiverAddresses.length} tokens in total.`,
-    [sender.address],
+    [sender.address.toLowerCase()],
   );
 }
