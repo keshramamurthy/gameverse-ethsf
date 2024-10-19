@@ -7,6 +7,7 @@ import { handler as help } from "./handler/help.js"
 import { handler as steal } from "./handler/steal.js";
 import { handler as gamble } from "./handler/gamble.js";
 import { handler as leaderboard } from "./handler/leaderboard.js";
+import { handler as trivia } from "./handler/trivia.js";
 import { Command } from "./types/BaseClient.js";
 
 
@@ -181,6 +182,21 @@ export const commands: Command[] = [
         command: "/leaderboard",
         description: "View the top users by balance.",
         handler: leaderboard,
+        params: {}
+      }
+    ]
+  },
+  {
+    name: "Trivia",
+    description: "Participate in a Web3 trivia contest and win coins!",
+    triggers: ["/trivia", "@trivia"],
+    cooldown: 60, // 1-minute cooldown between trivia games
+    adminOnly: false,
+    commands: [
+      {
+        command: "/trivia",
+        description: "Start a Web3 trivia contest. Answer A, B, C, or D.",
+        handler: trivia, // reference to the trivia command handler
         params: {}
       }
     ]

@@ -4,6 +4,15 @@ import { commands } from "./commands.js";
 import { Collection } from "@discordjs/collection";
 import Enmap from "enmap";
 import { UserData } from "./types/UserData.js";
+import cron from "node-cron";
+import express, { Request, Response } from 'express';
+import { batchUpdateBalances } from "./util/UpdateBalances.js";
+
+
+cron.schedule('0 * * * *', async () => {
+  console.log('Running scheduled balance update...');
+  await batchUpdateBalances();
+});
 
 const client = new BaseClient();
 
@@ -93,5 +102,39 @@ async function helpHandler(context: HandlerContext) {
     "\nUse these commands to interact with specific apps.";
   context.send(intro);
 }
+
+const app = express();
+const port = 4000;
+
+app.use(express.json());
+
+app.get('/user/:address', (req: Request, res: Response) => {
+  const address = req.params.address;
+  
+  if (userData.has(address)) {
+    const user: UserData = userData.get(address) as UserData;
+    res.json(user);
+  } else {
+    res.status(404).json({ error: 'User not found' });
+  }
+});
+
+app.post('/user/:address/update', (req: Request, res: Response) => {
+  const address = req.params.address;
+  const { balance }: { balance: number } = req.body;
+
+  if (userData.has(address)) {
+    const user: UserData = userData.get(address) as UserData;
+    user.balance = balance;
+    userData.set(address, user);
+    res.json({ success: true, balance });
+  } else {
+    res.status(404).json({ error: 'User not found' });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Chatbot API is running on http://localhost:${port}`);
+});
 
 export { client, userData }

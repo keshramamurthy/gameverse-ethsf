@@ -1,9 +1,9 @@
 {
   "include": [
-    "src/**/*"
+    "game-bot/src/**/*"
 , "index.d.ts"  ],
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "game-bot/dist",
     "esModuleInterop": true,
     "declaration": true,
     "declarationMap": true,
