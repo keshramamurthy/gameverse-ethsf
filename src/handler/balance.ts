@@ -22,15 +22,19 @@ export async function handler(context: HandlerContext) {
         }
     
         const data = userData.get(sender.address.toLowerCase());
+
+        const frame_url = process.env.FRAMES_URL;
     
-        return context.send(`You have ${data?.balance} ❖.`);
+        return context.send(`${frame_url}/balance?balance=${data?.balance}&address=${data?.address}`);
     } else {
-        const data = userData.get(args[0]);
+        const data = userData.get(args[0].toLowerCase());
 
         if (!data) {
             return context.send("That user is not on Gameverse yet! You should send them a message and get them in!");
         } else {
-            return context.send(`That user has ${data?.balance} ❖.`);
+            const frame_url = process.env.FRAMES_URL;
+
+            return context.send(`${frame_url}/balance?balance=${data?.balance}&address=${data?.address}`);
         }
     }
 }

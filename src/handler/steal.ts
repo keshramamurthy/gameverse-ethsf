@@ -8,7 +8,7 @@ export async function handler(context: HandlerContext) {
   } = context;
 
   const args = content.content.slice(1).split(/ +/);
-  const target = args[1];
+  const target = args[1].toLowerCase();
 
   if (!target) {
     return context.send("Please specify a user to steal from.");
@@ -42,12 +42,16 @@ export async function handler(context: HandlerContext) {
     userData.set(sender.address.toLowerCase(), thief);
     userData.set(target, victim);
 
+    const frame_url = process.env.FRAMES_URL;
+    return context.send(`${frame_url}/steal?coins=${stolenAmount}&success=true`);
     return context.send(`You successfully stole ${stolenAmount} ❖ from ${target}. Your new balance is ${thief.balance} ❖.`);
   } else {
     const lossAmount = Math.floor(thief.balance * 0.1);
     thief.balance -= lossAmount;
     userData.set(sender.address.toLowerCase(), thief);
 
+    const frame_url = process.env.FRAMES_URL;
+    return context.send(`${frame_url}/gamble?coins=${lossAmount}&success=false`);
     return context.send(`You were caught and lost ${lossAmount} ❖. Your new balance is ${thief.balance} ❖.`);
   }
 }

@@ -12,7 +12,7 @@ export async function handler(context: HandlerContext) {
     const args = content.content.slice(1).split(/ +/);
     const commandName = args.shift().toLowerCase();
 
-    const recipient = args[0];
+    const recipient = args[0].toLowerCase();
     const amount = parseInt(args[1]);
 
     if (args.length < 2 || isNaN(amount)) {
@@ -48,5 +48,7 @@ export async function handler(context: HandlerContext) {
     userData.set(sender.address.toLowerCase(), senderData);
     userData.set(recipient, recipientData);
 
+    const frame_url = process.env.FRAMES_URL;
+    return context.send(`${frame_url}/transfer?coins=${amount}`);
     return context.send(`Successfully transferred ${amount} ❖ to ${recipient}. Your new balance is ${senderData.balance} ❖.`);
 }
