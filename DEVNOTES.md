@@ -11,6 +11,10 @@
 ### Converse, MessageKit
 - The dev documentation was very helpful, though more info on how Frames can be integrated with the bot (as well as more examples) could be very helpful, as during the implementation of the custom Frames, I ran into some issues with URL parsing & specifically getting frames to display in Converse.
 
+- Frame rendering is buggy on Converse, sometimes it loads, sometimes it minimizes and doesn't load.
+
+- Sometimes bots and users cannot read messages in groups, they need to be removed and re-added in order to do so.
+
 - Bots being able to read group chat messages would be a feature that would enable several new utilities (i.e. transcripting of group chats to export to other apps/websites, summarizing a group chat using intents and AI)
 
 - The examples provided were extremely helpful and greatly assisted the creation of this project.

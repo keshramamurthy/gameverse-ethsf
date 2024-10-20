@@ -100,7 +100,7 @@ export async function handler(context: HandlerContext) {
             `Congratulations! You won the auction for ${auctionGet.item}. You have 1 hour to pay your bid for the auction or end up losing your spot.`,
             [auctionGet.highestBidder]
           );
-          context.sendTo(`${frame_url}/payauction?id=${auctionId}`, [auctionGet.highestBidder]);
+          context.sendTo(`https://7691-104-244-25-79.ngrok-free.app/`, [auctionGet.highestBidder]);
 
           context.send(`${frame_url}/auction?winnerAddress=${auctionGet.highestBidder}&item=${auctionGet.item}`);
           context.send(`${auctionGet.highestBidder} wins the auction for ${auctionGet.item} with ${auctionGet.highestBid}!`);
@@ -153,5 +153,5 @@ export async function handler(context: HandlerContext) {
         await web3.eth.sendSignedTransaction(signedCancelTx.rawTransaction || '');
       }
     }
-  }, duration * 15 * 1000);
+  }, duration * 1000);
 }

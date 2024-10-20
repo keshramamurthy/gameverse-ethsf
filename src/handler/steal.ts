@@ -51,7 +51,7 @@ export async function handler(context: HandlerContext) {
     userData.set(sender.address.toLowerCase(), thief);
 
     const frame_url = process.env.FRAMES_URL;
-    return context.send(`${frame_url}/gamble?coins=${lossAmount}&success=false`);
+    return context.send(`${frame_url}/steal?coins=${lossAmount}&success=false`);
     return context.send(`You were caught and lost ${lossAmount} ❖. Your new balance is ${thief.balance} ❖.`);
   }
 }

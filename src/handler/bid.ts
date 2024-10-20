@@ -49,18 +49,18 @@ export async function handler(context: HandlerContext) {
 
   const nonce = await web3.eth.getTransactionCount(ownerAddress, 'latest');
 
-  const signedBidTx = await web3.eth.accounts.signTransaction(
-    {
-      to: auction.contractAddress,
-      data: bidTx.encodeABI(),
-      from: ownerAddress,
-      gas: 3000000,
-      gasPrice: await web3.eth.getGasPrice(),
-      nonce
-    },
-    ownerPrivateKey
-  );
+  // const signedBidTx = await web3.eth.accounts.signTransaction(
+  //   {
+  //     to: auction.contractAddress,
+  //     data: bidTx.encodeABI(),
+  //     from: ownerAddress,
+  //     gas: 3000000,
+  //     gasPrice: await web3.eth.getGasPrice(),
+  //     nonce
+  //   },
+  //   ownerPrivateKey
+  // );
 
-  await web3.eth.sendSignedTransaction(signedBidTx.rawTransaction || '');
+  // await web3.eth.sendSignedTransaction(signedBidTx.rawTransaction || '');
   context.send(`${sender.address} has bid ${bidAmount} on ${auction.item}.`);
 }
