@@ -9,6 +9,8 @@ export type Auction = {
     highestBidder: string;
     owner: string;
     auctionComplete: boolean;
+    auctionPaid: boolean;
+    contractAddress: string;
 }
 
 export const generateSessionId = (length: number = 16): string => {

@@ -1,6 +1,8 @@
 import { HandlerContext, User } from "@xmtp/message-kit";
 import { auctions } from "../index.js";
 import { Auction } from "../types/Auction.js";
+import fs from "fs";
+import Web3 from "web3";
 
 export async function handler(context: HandlerContext) {
   const {
@@ -25,8 +27,40 @@ export async function handler(context: HandlerContext) {
 
   const auctionId = "auction_" + context.group.id;
   if (auctions.has(auctionId)) {
-    return context.send("There is already an auction running in this group.");
+    if (!auctions.get(auctionId).auctionComplete) {
+      return context.send("There is already an auction running in this group.");
+    }
   }
+
+  const web3 = new Web3(new Web3.providers.HttpProvider(process.env.AIRDAO_ENDPOINT));
+  const AuctionABI = JSON.parse(fs.readFileSync("AuctionABI.json", "utf-8"))
+
+  const ownerAddress = process.env.SKALE_ADDRESS;
+  const ownerPrivateKey = process.env.SKALE_PRIVATE_KEY;
+  const auctionContract = new web3.eth.Contract(AuctionABI);
+  const deployTx = auctionContract.deploy({
+    data: fs.readFileSync("AuctionBytecode.txt", "utf-8"), // Ensure you have the bytecode for the contract
+    arguments: [item, startingBid, minimumIncrement, duration],
+  });
+
+  const nonce = await web3.eth.getTransactionCount(ownerAddress, 'latest');
+  const signedTx = await web3.eth.accounts.signTransaction(
+    {
+      
+      data: deployTx.encodeABI(),
+      from: ownerAddress,
+      gas: 3000000,
+      gasPrice: await web3.eth.getGasPrice(),
+      nonce
+    },
+    ownerPrivateKey
+  );
+  console.log(signedTx);
+
+  const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction || '');
+  const contractAddress = receipt.contractAddress;
+  console.log(contractAddress);
+
 
   const auction: Auction = {
     item,
@@ -38,7 +72,9 @@ export async function handler(context: HandlerContext) {
     highestBidder: "",
     owner: sender.address,
     id: auctionId,
-    auctionComplete: false
+    auctionComplete: false,
+    auctionPaid: false,
+    contractAddress
   };
 
   auctions.set(auctionId, auction);
@@ -46,48 +82,90 @@ export async function handler(context: HandlerContext) {
     `Auction created! Item: ${item}, Duration: ${duration} hours, Starting Bid: ${startingBid}, Minimum Increment: ${minimumIncrement}`
   );
 
-  setTimeout(() => {
-    const auction = auctions.get(auctionId) as Auction;
-    if (!auction.auctionComplete) {
-      auction.auctionComplete = true;
-      auctions.set(auctionId, auction);
+  setTimeout(async () => {
+    const auctionGet = auctions.get(auctionId) as Auction;
 
-      if (auction.highestBidder) {
-        // // Notify the highest bidder to complete payment via Frames.js
-        // const paymentLink = `/auctionpay?address=${auction.highestBidder}&amount=${auction.highestBid}`;
+    if (!auctionGet.auctionComplete) {
+      auctionGet.auctionComplete = true;
+      auctions.set(auctionId, auctionGet);
 
-        // await sendFrame(auction.highestBidder, {
-        //   image: (
-        //     <div>
-        //     Congratulations, you won the auction for { auction.item }! Please complete the payment.
-        //     </div>
-        //   ),
-        //   buttons: [
-        //     {
-        //       action: "tx",
-        //       target: paymentLink,
-        //       label: "Pay Now",
-        //     },
-        //   ],
-        // });
+      // Interact with the smart contract to finalize the auction on-chain
+      const contract = new web3.eth.Contract(AuctionABI, auctionGet.contractAddress);
+      const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
 
-        context.send(`${auction.highestBidder} wins with ${auction.highestBid}!`);
+      if (auctionGet.highestBidder) {
+        try {
+          const frame_url = process.env.FRAMES_URL;
 
-  // If the highest bidder doesn't pay within 1 hour, cancel the auction
-  // setTimeout(async () => {
-  //   const updatedAuction = auctions.get(auctionId);
-  //   if (updatedAuction && !updatedAuction.auctionComplete) {
-  //     await sendMessage(
-  //       auction.owner,
-  //       `The auction for ${auction.item} was cancelled because no payment was received.`
-  //     );
-  //     auctions.delete(auctionId);
-  //   }
-  // }, 3600 * 1000); // 1 hour payment window
-} else {
-  // Notify the auction owner that no bids were placed
-  context.sendTo("No bids were placed on your auction, so it has been cancelled.", [sender.address]);
-}
+          // Send message to the highest bidder
+          context.sendTo(
+            `Congratulations! You won the auction for ${auctionGet.item}. You have 1 hour to pay your bid for the auction or end up losing your spot.`,
+            [auctionGet.highestBidder]
+          );
+          context.sendTo(`${frame_url}/payauction?id=${auctionId}`, [auctionGet.highestBidder]);
+
+          context.send(`${auctionGet.highestBidder} wins the auction for ${auctionGet.item} with ${auctionGet.highestBid}!`);
+
+          // Call finalizeAuction on the smart contract
+          // const finalizeTx = contract.methods.finalizeAuction();
+          // const signedFinalizeTx = await web3.eth.accounts.signTransaction({
+          //   to: auctionGet.contractAddress,
+          //   data: finalizeTx.encodeABI(),
+          //   gas: 2000000,
+          // }, ownerPrivateKey);
+
+          // await web3.eth.sendSignedTransaction(signedFinalizeTx.rawTransaction || '');
+
+          // Start a timeout to wait for payment (1 hour)
+          setTimeout(async () => {
+            const updatedAuction = auctions.get(auctionId);
+            if (updatedAuction && !updatedAuction.auctionPaid) {
+              await context.sendTo(
+                `The auction for ${updatedAuction.item} was cancelled because no payment was received from ${updatedAuction.highestBidder}.`,
+                [updatedAuction.owner]
+              );
+
+              // Delete the auction from Enmap
+              auctions.delete(auctionId);
+
+              const nonce = await web3.eth.getTransactionCount(ownerAddress, 'latest');
+              // Call cancelAuction on the smart contract
+              const cancelTx = contract.methods.cancelAuction();
+              const signedCancelTx = await web3.eth.accounts.signTransaction({
+                to: auctionGet.contractAddress,
+                data: cancelTx.encodeABI(),
+                from: ownerAddress,
+                gas: 3000000,
+                gasPrice: await web3.eth.getGasPrice(),
+                nonce
+              }, ownerPrivateKey);
+
+              await web3.eth.sendSignedTransaction(signedCancelTx.rawTransaction || '');
+            }
+          }, 3600 * 1000); // 1 hour payment window
+
+        } catch (error) {
+          console.error("Error finalizing auction:", error);
+        }
+
+      } else {
+        // Notify the auction owner that no bids were placed
+        context.sendTo("No bids were placed on your auction, so it has been cancelled.", [auctionGet.owner]);
+
+        const nonce = await web3.eth.getTransactionCount(ownerAddress, 'latest');
+        // Call cancelAuction on the smart contract
+        const cancelTx = contract.methods.cancelAuction();
+        const signedCancelTx = await web3.eth.accounts.signTransaction({
+          to: auctionGet.contractAddress,
+          data: cancelTx.encodeABI(),
+          from: ownerAddress,
+          gas: 3000000,
+          gasPrice: await web3.eth.getGasPrice(),
+          nonce
+        }, ownerPrivateKey);
+
+        await web3.eth.sendSignedTransaction(signedCancelTx.rawTransaction || '');
+      }
     }
-  }, duration * 60);
+  }, duration * 15 * 1000);
 }

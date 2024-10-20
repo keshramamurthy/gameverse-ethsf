@@ -28,6 +28,7 @@ cron.schedule('0 * * * *', async () => {
 });
 (async () => {
   console.log("starting");
+  auctions.clear();
   // await batchUpdateBalances();
 
 
@@ -48,6 +49,8 @@ cron.schedule('0 * * * *', async () => {
         handleTextMessage(context);
         break;
     }
+  }, {
+    experimental: true
   });
 
   async function handleTextMessage(context: HandlerContext) {
@@ -139,6 +142,37 @@ cron.schedule('0 * * * *', async () => {
       res.json({ success: true, balance });
     } else {
       res.status(404).json({ error: 'User not found' });
+    }
+  });
+
+  app.get('/auction', (req: Request, res: Response) => {
+    try {
+      if (!req.query.auction) {
+        res.status(400).send("no");
+        return;
+      }
+      const auctionId = `auction_${req.query.auction}`; // Replace with dynamic group ID if necessary
+
+      if (!auctions.has(auctionId)) {
+        res.status(404).json({ message: "No auction currently running in this group." });
+        return;
+      }
+
+      const auction = auctions.get(auctionId) as Auction;
+
+      // Return auction details
+      res.json({
+        item: auction.item,
+        highestBid: auction.highestBid,
+        highestBidder: auction.highestBidder || "No bids yet",
+        duration: auction.duration,
+        timeRemaining: (auction.startTime + auction.duration * 3600 * 1000) - Date.now(),
+        auctionComplete: auction.auctionComplete,
+        contractAddress: auction.contractAddress,
+      });
+    } catch (error) {
+      console.error('Error fetching auction data:', error);
+      res.status(500).send('Error fetching auction data');
     }
   });
 
