@@ -7,12 +7,7 @@ import { UserData } from "./types/UserData.js";
 import cron from "node-cron";
 import express, { Request, Response } from 'express';
 import { batchUpdateBalances } from "./util/UpdateBalances.js";
-
-
-cron.schedule('0 * * * *', async () => {
-  console.log('Running scheduled balance update...');
-  await batchUpdateBalances();
-});
+import { Auction } from "./types/Auction.js";
 
 const client = new BaseClient();
 
@@ -22,33 +17,47 @@ const userData = new Enmap<string, UserData>({
   autoFetch: true
 });
 
-client.on("message", context => {
-  console.log(context.message.content.content);
-})
-
-client.registerCommands(commands);
-
-// Main function to run the app
-run(async (context: HandlerContext) => {
-  const {
-    message: { typeId },
-  } = context;
-  console.log(typeId);
-  switch (typeId) {
-    case "text":
-      handleTextMessage(context);
-      break;
-  }
+const auctions = new Enmap<string, Auction>({
+  name: "auctions",
+  fetchAll: true,
+  autoFetch: true
 });
+cron.schedule('0 * * * *', async () => {
+  console.log('Running scheduled balance update...');
+  await batchUpdateBalances();
+});
+(async () => {
+  console.log("starting");
+  // await batchUpdateBalances();
 
-async function handleTextMessage(context: HandlerContext) {
-  client.emit("message", context);
-  const {
-    content: { content: text },
-  } = context.message;
-  // if (text.includes("/help")) {
-  //   await helpHandler(context);
-  // } else {
+
+  client.on("message", context => {
+    console.log(context.message.content.content);
+  })
+
+  client.registerCommands(commands);
+
+  // Main function to run the app
+  run(async (context: HandlerContext) => {
+    const {
+      message: { typeId },
+    } = context;
+    console.log(typeId, "a");
+    switch (typeId) {
+      case "text":
+        handleTextMessage(context);
+        break;
+    }
+  });
+
+  async function handleTextMessage(context: HandlerContext) {
+    client.emit("message", context);
+    const {
+      content: { content: text },
+    } = context.message;
+    // if (text.includes("/help")) {
+    //   await helpHandler(context);
+    // } else {
     const args = text.slice(1).split(/ +/);
     const commandName: string = args.shift().toLowerCase();
 
@@ -88,53 +97,56 @@ async function handleTextMessage(context: HandlerContext) {
     } catch (e) {
       console.error(e);
     }
-  // }
-}
-
-async function helpHandler(context: HandlerContext) {
-  const { commands = [] } = context;
-  const intro =
-    "Available experiences:\n" +
-    commands
-      .flatMap((app) => app.commands)
-      .map((command) => `${command.command} - ${command.description}`)
-      .join("\n") +
-    "\nUse these commands to interact with specific apps.";
-  context.send(intro);
-}
-
-const app = express();
-const port = 4000;
-
-app.use(express.json());
-
-app.get('/user/:address', (req: Request, res: Response) => {
-  const address = req.params.address;
-  
-  if (userData.has(address)) {
-    const user: UserData = userData.get(address) as UserData;
-    res.json(user);
-  } else {
-    res.status(404).json({ error: 'User not found' });
+    // }
   }
-});
 
-app.post('/user/:address/update', (req: Request, res: Response) => {
-  const address = req.params.address;
-  const { balance }: { balance: number } = req.body;
-
-  if (userData.has(address)) {
-    const user: UserData = userData.get(address) as UserData;
-    user.balance = balance;
-    userData.set(address, user);
-    res.json({ success: true, balance });
-  } else {
-    res.status(404).json({ error: 'User not found' });
+  async function helpHandler(context: HandlerContext) {
+    const { commands = [] } = context;
+    const intro =
+      "Available experiences:\n" +
+      commands
+        .flatMap((app) => app.commands)
+        .map((command) => `${command.command} - ${command.description}`)
+        .join("\n") +
+      "\nUse these commands to interact with specific apps.";
+    context.send(intro);
   }
-});
 
-app.listen(port, () => {
-  console.log(`Chatbot API is running on http://localhost:${port}`);
-});
+  const app = express();
+  const port = 4000;
 
-export { client, userData }
+  app.use(express.json());
+
+  app.get('/user/:address', (req: Request, res: Response) => {
+    const address = req.params.address;
+
+    if (userData.has(address)) {
+      const user: UserData = userData.get(address) as UserData;
+      res.json(user);
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  });
+
+  app.post('/user/:address/update', (req: Request, res: Response) => {
+    const address = req.params.address;
+    const { balance }: { balance: number } = req.body;
+
+    if (userData.has(address)) {
+      const user: UserData = userData.get(address) as UserData;
+      user.balance = balance;
+      userData.set(address, user);
+      res.json({ success: true, balance });
+    } else {
+      res.status(404).json({ error: 'User not found' });
+    }
+  });
+
+  app.listen(port, () => {
+    console.log(`Chatbot API is running on http://localhost:${port}`);
+  });
+})()
+
+
+
+export { client, userData, auctions }

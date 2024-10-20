@@ -59,6 +59,6 @@ export async function handler(context: HandlerContext) {
     userData.set(sender.address.toLowerCase(), user);
     const frame_url = process.env.FRAMES_URL;
     return context.send(`${frame_url}/gamble?coins=${amount}&win=false`);
-    return context.send(`Oh no! You lost everything. Your new balance is ${user.balance} ❖.`);
+    // return context.send(`Oh no! You lost everything. Your new balance is ${user.balance} ❖.`);
   }
 }

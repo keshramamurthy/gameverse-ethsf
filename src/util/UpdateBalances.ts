@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import Web3 from 'web3';
 import cron from 'node-cron';
 import fs from 'fs';
-import { userData } from '..';
+import { userData } from '../index.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -35,6 +35,9 @@ async function sendTransaction(txData: any): Promise<any> {
             to: contractAddress,
             gas: 2000000, // Set appropriate gas limit
             data: txData,
+            // maxPriorityFeePerGas: web3.utils.toWei('2', 'gwei'), // Priority fee for miners
+            maxFeePerGas: await web3.eth.getGasPrice(),
+            maxPriorityFeePerGas: await web3.eth.getMaxPriorityFeePerGas(),
             nonce,
         };
 

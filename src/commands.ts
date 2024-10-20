@@ -8,6 +8,9 @@ import { handler as steal } from "./handler/steal.js";
 import { handler as gamble } from "./handler/gamble.js";
 import { handler as leaderboard } from "./handler/leaderboard.js";
 import { handler as trivia } from "./handler/trivia.js";
+import { handler as createAuction } from "./handler/auction.js";
+import { handler as bid } from "./handler/bid.js";
+import { handler as checkAuction } from "./handler/checkauction.js";
 import { Command } from "./types/BaseClient.js";
 
 
@@ -197,6 +200,73 @@ export const commands: Command[] = [
         command: "/trivia",
         description: "Start a Web3 trivia contest. Answer A, B, C, or D.",
         handler: trivia, // reference to the trivia command handler
+        params: {}
+      }
+    ]
+  },
+  {
+    name: "Auction",
+    description: "Create a new auction in the group chat.",
+    triggers: ["/auction", "/createauction"],
+    cooldown: 10,
+    adminOnly: false,
+    commands: [
+      {
+        command: "/auction <item> <duration> <startingBid> <minIncrement>",
+        description: "Creates an auction for an item in the group chat.",
+        handler: createAuction,
+        params: {
+          item: {
+            default: "",
+            type: "string"
+          },
+          duration: {
+            default: 1,
+            type: "number"
+          },
+          startingBid: {
+            default: 0,
+            type: "number"
+          },
+          minIncrement: {
+            default: 1,
+            type: "number"
+          }
+        }
+      }
+    ]
+  },
+  {
+    name: "Bid",
+    description: "Place a bid on the current auction.",
+    triggers: ["/bid"],
+    cooldown: 5,
+    adminOnly: false,
+    commands: [
+      {
+        command: "/bid <amount>",
+        description: "Place a bid on the current auction.",
+        handler: bid,
+        params: {
+          amount: {
+            default: 0,
+            type: "number"
+          }
+        }
+      }
+    ]
+  },
+  {
+    name: "CheckAuction",
+    description: "Check if there is an auction currently running in the group.",
+    triggers: ["/checkauction", "/currentauction"],
+    cooldown: 5,
+    adminOnly: false,
+    commands: [
+      {
+        command: "/checkauction",
+        description: "Check if there is a current auction running.",
+        handler: checkAuction,
         params: {}
       }
     ]
