@@ -1,7 +1,7 @@
 {
   "include": [
     "./src/**/*.ts"
-, "index.d.ts"  ],
+ ],
   "compilerOptions": {
     "outDir": "./dist",
     "esModuleInterop": true,

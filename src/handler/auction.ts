@@ -89,7 +89,6 @@ export async function handler(context: HandlerContext) {
       auctionGet.auctionComplete = true;
       auctions.set(auctionId, auctionGet);
 
-      // Interact with the smart contract to finalize the auction on-chain
       const contract = new web3.eth.Contract(AuctionABI, auctionGet.contractAddress);
       const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
 
@@ -97,7 +96,6 @@ export async function handler(context: HandlerContext) {
         try {
           const frame_url = process.env.FRAMES_URL;
 
-          // Send message to the highest bidder
           context.sendTo(
             `Congratulations! You won the auction for ${auctionGet.item}. You have 1 hour to pay your bid for the auction or end up losing your spot.`,
             [auctionGet.highestBidder]
@@ -107,17 +105,6 @@ export async function handler(context: HandlerContext) {
           context.send(`${frame_url}/auction?winnerAddress=${auctionGet.highestBidder}&item=${auctionGet.item}`);
           context.send(`${auctionGet.highestBidder} wins the auction for ${auctionGet.item} with ${auctionGet.highestBid}!`);
 
-          // Call finalizeAuction on the smart contract
-          // const finalizeTx = contract.methods.finalizeAuction();
-          // const signedFinalizeTx = await web3.eth.accounts.signTransaction({
-          //   to: auctionGet.contractAddress,
-          //   data: finalizeTx.encodeABI(),
-          //   gas: 2000000,
-          // }, ownerPrivateKey);
-
-          // await web3.eth.sendSignedTransaction(signedFinalizeTx.rawTransaction || '');
-
-          // Start a timeout to wait for payment (1 hour)
           setTimeout(async () => {
             const updatedAuction = auctions.get(auctionId);
             if (updatedAuction && !updatedAuction.auctionPaid) {
@@ -126,11 +113,9 @@ export async function handler(context: HandlerContext) {
                 [updatedAuction.owner]
               );
 
-              // Delete the auction from Enmap
               auctions.delete(auctionId);
 
               const nonce = await web3.eth.getTransactionCount(ownerAddress, 'latest');
-              // Call cancelAuction on the smart contract
               const cancelTx = contract.methods.cancelAuction();
               const signedCancelTx = await web3.eth.accounts.signTransaction({
                 to: auctionGet.contractAddress,
