@@ -39,22 +39,22 @@ export async function handler(context: HandlerContext) {
   auction.highestBidder = sender.address;
 
   auctions.set(auctionId, auction);
-  const web3 = new Web3(new Web3.providers.HttpProvider(process.env.AIRDAO_ENDPOINT));
-  const AuctionABI = JSON.parse(fs.readFileSync("AuctionABI.json", "utf-8"))
+  // const web3 = new Web3(new Web3.providers.HttpProvider(process.env.AIRDAO_ENDPOINT));
+  // const AuctionABI = JSON.parse(fs.readFileSync("AuctionABI.json", "utf-8"))
 
-  const contract = new web3.eth.Contract(AuctionABI, auction.contractAddress);
-  const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
-  const bidTx = contract.methods.placeBid(bidAmount, sender.address);
+  // const contract = new web3.eth.Contract(AuctionABI, auction.contractAddress);
+  // const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
+  // const bidTx = contract.methods.placeBid(bidAmount, sender.address);
 
-  const signedBidTx = await web3.eth.accounts.signTransaction(
-    {
-      to: auction.contractAddress,
-      data: bidTx.encodeABI(),
-      gas: 2000000,
-    },
-    ownerPrivateKey
-  );
+  // const signedBidTx = await web3.eth.accounts.signTransaction(
+  //   {
+  //     to: auction.contractAddress,
+  //     data: bidTx.encodeABI(),
+  //     gas: 2000000,
+  //   },
+  //   ownerPrivateKey
+  // );
 
-  await web3.eth.sendSignedTransaction(signedBidTx.rawTransaction || '');
+  // await web3.eth.sendSignedTransaction(signedBidTx.rawTransaction || '');
   context.send(`${sender.address} has bid ${bidAmount} on ${auction.item}.`);
 }

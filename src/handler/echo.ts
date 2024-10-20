@@ -15,6 +15,7 @@ export async function handler(context: HandlerContext) {
     if (collectedMessages.length) {
       // Send the echoed message back to the user
       const userMessage = collectedMessages[0].message.content.content;
+
       await context.send(`You said: ${userMessage}`);
     } else {
       await context.send("You didn't say anything in time! Please try again.");

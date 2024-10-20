@@ -1,4 +1,4 @@
-import { HandlerContext, User } from "@xmtp/message-kit";
+import { HandlerContext, User, xmtpClient } from "@xmtp/message-kit";
 import { auctions } from "../index.js";
 import { Auction } from "../types/Auction.js";
 import fs from "fs";
@@ -104,6 +104,7 @@ export async function handler(context: HandlerContext) {
           );
           context.sendTo(`${frame_url}/payauction?id=${auctionId}`, [auctionGet.highestBidder]);
 
+          context.send(`${frame_url}/auction?winnerAddress=${auctionGet.highestBidder}&item=${auctionGet.item}`);
           context.send(`${auctionGet.highestBidder} wins the auction for ${auctionGet.item} with ${auctionGet.highestBid}!`);
 
           // Call finalizeAuction on the smart contract
